@@ -41,7 +41,7 @@ class App {
 
             // Plane Mesh used for GUI elements
             const planeForMainMenu = Mesh.CreatePlane("planeForMainMenu", 20, scene);
-            planeForMainMenu.position.y = 5;
+            planeForMainMenu.position.y = 0;
 
             const planeForColorPicker = Mesh.CreatePlane("planeForColorPicker", 20, scene);
             planeForColorPicker.position.y = 5;
@@ -52,7 +52,7 @@ class App {
             const textureForColorPicker = GUI.AdvancedDynamicTexture.CreateForMesh(planeForColorPicker);
 
             const stackPanel = new GUI.StackPanel();
-            stackPanel.top = "100px";
+            stackPanel.top = "300px";
             textureForMainMenu.addControl(stackPanel);
 
             /*
@@ -69,7 +69,7 @@ class App {
             });
             stackPanel.addControl(clickMeButton);*/
 
-            textblock = new GUI.TextBlock();
+            /*textblock = new GUI.TextBlock();
             textblock.height = "150px";
             textblock.fontSize = 100;
             textblock.text = "please pick an option:";
@@ -94,7 +94,7 @@ class App {
             // Sphere material color will be updated by the value of the Color Picker
             const sphere = Mesh.CreateSphere("sphere", 12, 2, scene);
             sphere.position.x = 10;
-            sphere.material = sphereMat;
+            sphere.material = sphereMat;*/
 
             // Slider
             const slider = new GUI.Slider();
@@ -102,7 +102,27 @@ class App {
             slider.height = "20px";
             slider.minimum = 0;
             slider.maximum = 1;
+            slider.value = 0;
             stackPanel.addControl(slider);
+
+            const videoButton = GUI.Button.CreateSimpleButton("videoButton", "Play");
+            videoButton.width = 0.3;
+            videoButton.height = "100px";
+            videoButton.color = "white";
+            videoButton.fontSize = 50;
+            videoButton.background = "green";
+            videoButton.paddingTop = "50px";
+            videoButton.onPointerUpObservable.add(function () {
+                if (videoTexture.video.paused) {
+                    videoTexture.video.play();
+                    videoButton.textBlock.text = "Stop";
+                } else {
+                    videoTexture.video.pause();
+                    videoButton.textBlock.text = "Play";
+                }
+
+            });
+            stackPanel.addControl(videoButton);
 
             // Video
             const planeForVideo = MeshBuilder.CreatePlane("planeForVideo", {
@@ -112,12 +132,23 @@ class App {
             }, scene);
             const videoMat = new StandardMaterial("videoMat", scene);
             const videoTexture = new VideoTexture("video", "textures/video.mp4", scene);
+            videoTexture.video.autoplay = false;
             videoMat.diffuseTexture = videoTexture;
             videoMat.emissiveColor = new Color3(1, 1, 1);
-            videoTexture.video.play();
+
             planeForVideo.material = videoMat;
-            planeForVideo.position.y = 5;
-            planeForVideo.position.x = -20;
+            planeForVideo.position.y = 0;
+            planeForVideo.position.x = 0;
+            planeForVideo.position.z = 5;
+
+
+            videoTexture.onUserActionRequestedObservable.add(() => {
+                console.log("Baum");
+                scene.onPointerDown = function () {
+                    console.log("Baumi");
+                    videoTexture.video.play();
+                }
+            });
 
             // VR config
             const VRHelper = scene.createDefaultVRExperience();
