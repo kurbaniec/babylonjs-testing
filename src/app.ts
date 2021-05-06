@@ -1,7 +1,17 @@
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
-import {Engine, FreeCamera, HemisphericLight, Mesh, Scene, StandardMaterial, Vector3,} from "@babylonjs/core";
+import {
+    Color3,
+    Engine,
+    FreeCamera,
+    HemisphericLight,
+    Mesh,
+    MeshBuilder,
+    Scene,
+    StandardMaterial,
+    Vector3, VideoTexture,
+} from "@babylonjs/core";
 import * as GUI from "@babylonjs/gui";
 
 class App {
@@ -93,6 +103,21 @@ class App {
             slider.minimum = 0;
             slider.maximum = 1;
             stackPanel.addControl(slider);
+
+            // Video
+            const planeForVideo = MeshBuilder.CreatePlane("planeForVideo", {
+                height: 1920 / 100,
+                width: 1080 / 100,
+                sideOrientation: Mesh.DOUBLESIDE
+            }, scene);
+            const videoMat = new StandardMaterial("videoMat", scene);
+            const videoTexture = new VideoTexture("video", "textures/video.mp4", scene);
+            videoMat.diffuseTexture = videoTexture;
+            videoMat.emissiveColor = new Color3(1, 1, 1);
+            videoTexture.video.play();
+            planeForVideo.material = videoMat;
+            planeForVideo.position.y = 5;
+            planeForVideo.position.x = -20;
 
             // VR config
             const VRHelper = scene.createDefaultVRExperience();
