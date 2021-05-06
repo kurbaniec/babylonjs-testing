@@ -17,6 +17,7 @@ module.exports = {
     resolve: {
         extensions: [".tsx", ".ts", ".js"],
     },
+    devtool: 'source-map',
     devServer: {
         host: "0.0.0.0",
         port: 8080, //port that we're using for local host (localhost:8080)

@@ -10,7 +10,8 @@ import {
     MeshBuilder,
     Scene,
     StandardMaterial,
-    Vector3, VideoTexture,
+    Vector3,
+    VideoTexture,
 } from "@babylonjs/core";
 import * as GUI from "@babylonjs/gui";
 
@@ -96,15 +97,25 @@ class App {
             sphere.position.x = 10;
             sphere.material = sphereMat;*/
 
-            // Slider
-            const slider = new GUI.Slider();
-            slider.width = "350px";
-            slider.height = "20px";
-            slider.minimum = 0;
-            slider.maximum = 1;
-            slider.value = 0;
-            stackPanel.addControl(slider);
+            // Video
+            const planeForVideo = MeshBuilder.CreatePlane("planeForVideo", {
+                height: 1920 / 100,
+                width: 1080 / 100,
+                sideOrientation: Mesh.DOUBLESIDE
+            }, scene);
+            const videoMat = new StandardMaterial("videoMat", scene);
+            const videoTexture = new VideoTexture("video", "textures/video.mp4", scene);
+            videoTexture.video.autoplay = false;
+            videoTexture.video.muted = true;
+            videoMat.diffuseTexture = videoTexture;
+            videoMat.emissiveColor = new Color3(1, 1, 1);
 
+            planeForVideo.material = videoMat;
+            planeForVideo.position.y = 0;
+            planeForVideo.position.x = 0;
+            planeForVideo.position.z = 5;
+
+            // Play/Pause Button
             const videoButton = GUI.Button.CreateSimpleButton("videoButton", "Play");
             videoButton.width = 0.3;
             videoButton.height = "100px";
@@ -112,6 +123,7 @@ class App {
             videoButton.fontSize = 50;
             videoButton.background = "green";
             videoButton.paddingTop = "50px";
+            // Play/Pause playback on click
             videoButton.onPointerUpObservable.add(function () {
                 if (videoTexture.video.paused) {
                     videoTexture.video.play();
@@ -124,31 +136,25 @@ class App {
             });
             stackPanel.addControl(videoButton);
 
-            // Video
-            const planeForVideo = MeshBuilder.CreatePlane("planeForVideo", {
-                height: 1920 / 100,
-                width: 1080 / 100,
-                sideOrientation: Mesh.DOUBLESIDE
-            }, scene);
-            const videoMat = new StandardMaterial("videoMat", scene);
-            const videoTexture = new VideoTexture("video", "textures/video.mp4", scene);
-            videoTexture.video.autoplay = false;
-            videoMat.diffuseTexture = videoTexture;
-            videoMat.emissiveColor = new Color3(1, 1, 1);
-
-            planeForVideo.material = videoMat;
-            planeForVideo.position.y = 0;
-            planeForVideo.position.x = 0;
-            planeForVideo.position.z = 5;
-
-
-            videoTexture.onUserActionRequestedObservable.add(() => {
-                console.log("Baum");
-                scene.onPointerDown = function () {
-                    console.log("Baumi");
-                    videoTexture.video.play();
-                }
+            // Slider
+            const slider = new GUI.Slider();
+            slider.width = "350px";
+            slider.height = "20px";
+            slider.minimum = 0.0;
+            slider.maximum = 1.0;
+            slider.value = 0.0;
+            // Update video when slider is manually moved
+            slider.onPointerUpObservable.add(() => {
+                const duration = videoTexture.video.duration;
+                let skipTo = slider.value * duration;
+                if (!isNaN(skipTo)) videoTexture.video.currentTime = skipTo;
             });
+            // Move slider when video time is updated
+            videoTexture.video.addEventListener("timeupdate", function () {
+                slider.value = videoTexture.video.currentTime / videoTexture.video.duration;
+            });
+
+            stackPanel.addControl(slider);
 
             // VR config
             const VRHelper = scene.createDefaultVRExperience();
