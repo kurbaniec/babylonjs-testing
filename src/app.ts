@@ -1,14 +1,7 @@
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
-import {
-    Engine,
-    FreeCamera,
-    HemisphericLight,
-    Mesh,
-    Scene, StandardMaterial,
-    Vector3,
-} from "@babylonjs/core";
+import {Engine, FreeCamera, HemisphericLight, Mesh, Scene, StandardMaterial, Vector3,} from "@babylonjs/core";
 import * as GUI from "@babylonjs/gui";
 
 class App {
@@ -52,6 +45,7 @@ class App {
             stackPanel.top = "100px";
             textureForMainMenu.addControl(stackPanel);
 
+            /*
             const clickMeButton = GUI.Button.CreateSimpleButton("clickMeButton", "Click Me");
             clickMeButton.width = 1;
             clickMeButton.height = "100px";
@@ -63,7 +57,7 @@ class App {
                     VRHelper.displayLaserPointer = !VRHelper.displayLaserPointer;
                 }
             });
-            stackPanel.addControl(clickMeButton);
+            stackPanel.addControl(clickMeButton);*/
 
             textblock = new GUI.TextBlock();
             textblock.height = "150px";
@@ -81,6 +75,7 @@ class App {
             picker.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
             picker.height = "450px";
             picker.width = "450px";
+            const sphereMat = new StandardMaterial("sphereMat", scene);
             picker.onValueChangedObservable.add(function (value) { // value is a color3
                 sphereMat.diffuseColor = value;
             });
@@ -89,19 +84,27 @@ class App {
             // Sphere material color will be updated by the value of the Color Picker
             const sphere = Mesh.CreateSphere("sphere", 12, 2, scene);
             sphere.position.x = 10;
-            var sphereMat = new StandardMaterial("sphereMat", scene);
             sphere.material = sphereMat;
 
-            var VRHelper = scene.createDefaultVRExperience();
+            // Slider
+            const slider = new GUI.Slider();
+            slider.width = "350px";
+            slider.height = "20px";
+            slider.minimum = 0;
+            slider.maximum = 1;
+            stackPanel.addControl(slider);
+
+            // VR config
+            const VRHelper = scene.createDefaultVRExperience();
             VRHelper.enableInteractions();
 
             return scene;
         };
 
-        var addRadio = function (text, parent) {
+        const addRadio = function (text, parent) {
             const button = new GUI.RadioButton();
-            button.width = "40px";
-            button.height = "40px";
+            button.width = "10px";
+            button.height = "10px";
             button.color = "white";
             button.background = "green";
             button.onIsCheckedChangedObservable.add(function (state) {
