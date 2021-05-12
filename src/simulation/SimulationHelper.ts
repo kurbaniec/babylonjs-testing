@@ -57,6 +57,8 @@ export class SimulationHelper implements Subject {
         const gravityVector = new Vector3(0, -9.81, 0);
         const physicsPlugin = new CannonJSPlugin(true, 10, cannon);
         this.scene.enablePhysics(gravityVector, physicsPlugin);
+        console.log(this.scene.physicsEnabled);
+        console.log("Hey!");
     }
 
     stopSimulation() {
@@ -80,5 +82,21 @@ export class SimulationHelper implements Subject {
         this.snapshotCount = 3;
         this.snapshotThreshold = 1000 / this.snapshotCount;
         this.lastDeltaTime = 0;
+    }
+
+    get isRecording(): boolean {
+        return this.recording;
+    }
+
+    get isPlayback(): boolean {
+        return this.playback;
+    }
+
+    get index(): number {
+        return this.currentIndex;
+    }
+
+    get currentScene(): Scene {
+        return this.scene;
     }
 }
