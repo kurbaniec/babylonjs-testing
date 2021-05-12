@@ -1,15 +1,19 @@
-import {Engine, Scene} from "@babylonjs/core";
+import {CannonJSPlugin, Engine, Scene, Vector3} from "@babylonjs/core";
 import {Subject} from "../utils/Subject";
 import {Observer} from "../utils/Observer";
+import * as cannon from "cannon";
 
 export class SimulationHelper implements Subject {
     private readonly scene: Scene;
     private readonly engine: Engine;
     private observers: Observer[] = [];
-    private recording = true;
-    private time = 0.0;
+    private recording = false;
+    private playback = false;
+    private currentIndex = 0;
     private indexCount = 0;
     private snapshotCount = 3;
+    private snapshotThreshold = 1000 / this.snapshotCount;
+    private lastDeltaTime = 0;
 
     constructor(scene: Scene, engine: Engine) {
         this.scene = scene;
@@ -31,9 +35,50 @@ export class SimulationHelper implements Subject {
     }
 
     notify(): void {
-        const delta = this.engine.getDeltaTime();
-        for (const observer of this.observers) {
-            observer.update(this);
+        // Trigger only every x times (determined by snapshotThreshold) in one second
+        const currentTime = this.lastDeltaTime + this.engine.getDeltaTime();
+        if (currentTime > this.snapshotThreshold) {
+            this.lastDeltaTime = currentTime - this.snapshotThreshold;
+            // console.log(this.lastDeltaTime);
+            this.indexCount++;
+            for (const observer of this.observers) {
+                observer.update(this);
+            }
+        } else {
+            this.lastDeltaTime = currentTime;
         }
+    }
+
+    startSimulation() {
+        this.recording = true;
+        // Setup physics
+        // See: https://doc.babylonjs.com/divingDeeper/physics/usingPhysicsEngine
+        // And: https://forum.babylonjs.com/t/cannon-js-npm-cannon-is-not-defined-in-v4-0-0-alpha-21-but-works-in-v4-0-0-alpha-16/844
+        const gravityVector = new Vector3(0, -9.81, 0);
+        const physicsPlugin = new CannonJSPlugin(true, 10, cannon);
+        this.scene.enablePhysics(gravityVector, physicsPlugin);
+    }
+
+    stopSimulation() {
+        this.recording = false;
+        this.scene.disablePhysicsEngine();
+    }
+
+    startPlayback() {
+        this.playback = true;
+    }
+
+    stopPlayback() {
+        this.playback = false;
+    }
+
+    restart() {
+        this.recording = false;
+        this.playback = false;
+        this.currentIndex = 0;
+        this.indexCount = 0;
+        this.snapshotCount = 3;
+        this.snapshotThreshold = 1000 / this.snapshotCount;
+        this.lastDeltaTime = 0;
     }
 }

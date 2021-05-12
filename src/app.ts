@@ -16,6 +16,8 @@ import {
 } from "@babylonjs/core";
 import * as GUI from "@babylonjs/gui";
 import * as cannon from "cannon";
+import {SimulationHelper} from "./simulation/SimulationHelper";
+import {SimulationMesh} from "./simulation/SimulationMesh";
 
 class App {
     constructor() {
@@ -27,8 +29,9 @@ class App {
         canvas.id = "gameCanvas";
         document.body.appendChild(canvas);
 
-        let engine = null;
-        let scene = null;
+        let engine: Engine = null;
+        let scene: Scene = null;
+        let simulationHelper: SimulationHelper = null;
         let sceneToRender = null;
         const createDefaultEngine = function () {
             return new Engine(canvas, true, {preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false});
@@ -37,6 +40,7 @@ class App {
 
         const createScene = function () {
             const scene = new Scene(engine);
+            const simulationHelper = new SimulationHelper(scene, engine);
 
             const camera = new FreeCamera("Camera", new Vector3(0, 5, -25), scene);
             camera.attachControl(canvas, true);
@@ -129,9 +133,11 @@ class App {
             videoButton.onPointerUpObservable.add(function () {
                 if (videoTexture.video.paused) {
                     videoTexture.video.play();
+                    simulationHelper.startSimulation();
                     videoButton.textBlock.text = "Stop";
                 } else {
                     videoTexture.video.pause();
+                    simulationHelper.stopSimulation();
                     videoButton.textBlock.text = "Play";
                 }
 
@@ -162,6 +168,7 @@ class App {
             ball.position.y = 2;
             const ground = Mesh.CreateGround("ground", 32, 32, 2, scene);
 
+
             // Setup physics
             // See: https://doc.babylonjs.com/divingDeeper/physics/usingPhysicsEngine
             // And: https://forum.babylonjs.com/t/cannon-js-npm-cannon-is-not-defined-in-v4-0-0-alpha-21-but-works-in-v4-0-0-alpha-16/844
@@ -170,6 +177,10 @@ class App {
             scene.enablePhysics(gravityVector, physicsPlugin);
 
             // To allow physics on an object it needs a physics imposter
+            const ballPhysics = new PhysicsImpostor(ball, PhysicsImpostor.SphereImpostor, {
+                mass: 1,
+                restitution: 0.9
+            }, scene);
             ball.physicsImpostor = new PhysicsImpostor(ball, PhysicsImpostor.SphereImpostor, {
                 mass: 1,
                 restitution: 0.9
@@ -180,13 +191,23 @@ class App {
             }, scene);
 
             // Apply force/impulse on ball
-            ball.physicsImpostor.applyImpulse(new Vector3(1, 20, -1), new Vector3(1, 2, 0))
+            //ball.physicsImpostor.applyImpulse(new Vector3(1, 20, -1), new Vector3(1, 2, 0))
+
+            scene.disablePhysicsEngine();
+
+            // SimulationHelper
+            // Add ball to track
+            simulationHelper.attach(new SimulationMesh(ball, ballPhysics, (m: Mesh) => {
+                // Apply force/impulse on ball
+                m.physicsImpostor.applyImpulse(new Vector3(1, 20, -1), new Vector3(1, 2, 0))
+            }));
 
             // VR config
             const VRHelper = scene.createDefaultVRExperience();
             VRHelper.enableInteractions();
 
-            return scene;
+            const retVal: [Scene, SimulationHelper] = [scene, simulationHelper];
+            return retVal;
         };
 
         const addRadio = function (text, parent) {
@@ -221,7 +242,7 @@ class App {
 
             engine = await asyncEngineCreation();
             if (!engine) throw 'engine should not be null.';
-            scene = createScene();
+            [scene, simulationHelper] = createScene();
         }
 
         initFunction().then(() => {
@@ -229,6 +250,7 @@ class App {
             engine.runRenderLoop(function () {
                 if (sceneToRender && sceneToRender.activeCamera) {
                     sceneToRender.render();
+                    simulationHelper.notify();
                 }
             });
         });
