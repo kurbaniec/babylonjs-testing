@@ -121,6 +121,25 @@ class App {
             planeForVideo.position.x = 0;
             planeForVideo.position.z = 5;
 
+            // Plan Button
+            const planButton = GUI.Button.CreateSimpleButton("planButton", "Plan");
+            planButton.width = 0.3;
+            planButton.height = "100px";
+            planButton.color = "white";
+            planButton.fontSize = 50;
+            planButton.background = "green";
+            planButton.paddingTop = "50px";
+            planButton.onPointerUpObservable.add(function () {
+                if (!simulationHelper.isRecording) {
+                    simulationHelper.startSimulation();
+                    planButton.textBlock.text = "Stop";
+                } else {
+                    simulationHelper.stopSimulation();
+                    planButton.textBlock.text = "Plan";
+                }
+            });
+            stackPanel.addControl(planButton);
+
             // Play/Pause Button
             const videoButton = GUI.Button.CreateSimpleButton("videoButton", "Play");
             videoButton.width = 0.3;
@@ -133,14 +152,13 @@ class App {
             videoButton.onPointerUpObservable.add(function () {
                 if (videoTexture.video.paused) {
                     videoTexture.video.play();
-                    simulationHelper.startSimulation();
+                    simulationHelper.startPlayback();
                     videoButton.textBlock.text = "Stop";
                 } else {
                     videoTexture.video.pause();
-                    simulationHelper.stopSimulation();
+                    simulationHelper.stopPlayback();
                     videoButton.textBlock.text = "Play";
                 }
-
             });
             stackPanel.addControl(videoButton);
 
@@ -168,39 +186,13 @@ class App {
             ball.position.y = 2;
             const ground = Mesh.CreateGround("ground", 32, 32, 2, scene);
 
-            /**
-             // Setup physics
-             // See: https://doc.babylonjs.com/divingDeeper/physics/usingPhysicsEngine
-             // And: https://forum.babylonjs.com/t/cannon-js-npm-cannon-is-not-defined-in-v4-0-0-alpha-21-but-works-in-v4-0-0-alpha-16/844
-             const gravityVector = new Vector3(0, -9.81, 0);
-             const physicsPlugin = new CannonJSPlugin(true, 10, cannon);
-             scene.enablePhysics(gravityVector, physicsPlugin);
-
-             // To allow physics on an object it needs a physics imposter
-             const ballPhysics = new PhysicsImpostor(ball, PhysicsImpostor.SphereImpostor, {
-                mass: 1,
-                restitution: 0.9
-            }, scene);
-             ball.physicsImpostor = new PhysicsImpostor(ball, PhysicsImpostor.SphereImpostor, {
-                mass: 1,
-                restitution: 0.9
-            }, scene);
-             ground.physicsImpostor = new PhysicsImpostor(ground, PhysicsImpostor.BoxImpostor, {
-                mass: 0,
-                restitution: 0.9
-            }, scene);
-
-             // Apply force/impulse on ball
-             //ball.physicsImpostor.applyImpulse(new Vector3(1, 20, -1), new Vector3(1, 2, 0))
-
-             scene.disablePhysicsEngine();*/
-
             // SimulationHelper
+            // Setup physics
             // Add ball to track
             simulationHelper.attach(new SimulationMesh(ball, (m: Mesh, s: Scene) => {
                 // Why this weird syntax?
                 // Well, when the physics engine gets disabled, everything needs to be setup again like the imposters
-                // (I tried storing the PhysicsImposter object and re-assigning it to the mesh,
+                // (I tried storing the PhysicsImposter object and re-assigning it to the mesh
                 //  when the physics are restored but it did not work)
                 m.physicsImpostor = new PhysicsImpostor(ball, PhysicsImpostor.SphereImpostor, {
                     mass: 1,
