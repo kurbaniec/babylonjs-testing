@@ -1,7 +1,7 @@
 import {Observer} from "../utils/Observer";
 import {Subject} from "../utils/Subject";
 import {SimulationHelper} from "./SimulationHelper";
-import {Mesh, PhysicsImpostor, Scene} from "@babylonjs/core";
+import {Mesh, PhysicsImpostor, Scene, Vector3} from "@babylonjs/core";
 import {SimPos, SimRot} from "./SimulationStore";
 
 type InitFunc = (m: Mesh, s: Scene) => void;
@@ -12,8 +12,8 @@ export class SimulationMesh implements Observer {
     private readonly physics: InitFunc;
     private readonly callback?: AfterInitFunc;
     private initialized = false;
-    private readonly pos: SimPos[] = [];
-    private readonly rot: SimRot[] = [];
+    private pos: SimPos[] = [];
+    private rot: SimRot[] = [];
 
     constructor(mesh: Mesh, physics: InitFunc, callback?: AfterInitFunc) {
         this.mesh = mesh;
@@ -26,6 +26,8 @@ export class SimulationMesh implements Observer {
         if (subj.isRecording) {
             if (this.initialized == false) {
                 console.log("Hey2");
+                this.pos = [];
+                this.rot = [];
                 this.physics(this.mesh, subj.currentScene);
                 if (this.callback !== undefined) {
                     this.callback(this.mesh);
@@ -38,6 +40,11 @@ export class SimulationMesh implements Observer {
 
         } else {
             if (this.initialized == true) {
+                // Return to first position
+                if (this.pos[0] !== undefined && this.rot[0] !== undefined) {
+                    this.mesh.position = this.pos[0].toVector3();
+                    this.mesh.rotation = this.rot[0].toVector3();
+                }
                 this.initialized = false;
             }
         }

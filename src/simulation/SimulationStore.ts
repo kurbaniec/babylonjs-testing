@@ -1,3 +1,5 @@
+import {Vector3} from "@babylonjs/core";
+
 export class SimPos {
     public x: number;
     public y: number;
@@ -8,6 +10,10 @@ export class SimPos {
         this.x = x;
         this.y = y;
         this.z = z;
+    }
+
+    toVector3(): Vector3 {
+        return new Vector3(this.x, this.y, this.z);
     }
 }
 
@@ -21,5 +27,9 @@ export class SimRot {
         this.x = x;
         this.y = y;
         this.z = z;
+    }
+
+    toVector3(): Vector3 {
+        return new Vector3(this.x, this.y, this.z);
     }
 }
