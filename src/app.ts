@@ -2,18 +2,20 @@ import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import {
+    CannonJSPlugin,
     Color3,
     Engine,
     FreeCamera,
     HemisphericLight,
     Mesh,
-    MeshBuilder,
+    MeshBuilder, PhysicsImpostor,
     Scene,
     StandardMaterial,
     Vector3,
     VideoTexture,
 } from "@babylonjs/core";
 import * as GUI from "@babylonjs/gui";
+import * as cannon from "cannon";
 
 class App {
     constructor() {
@@ -36,13 +38,13 @@ class App {
         const createScene = function () {
             const scene = new Scene(engine);
 
-            const camera = new FreeCamera("Camera", new Vector3(0, 0, -20), scene);
+            const camera = new FreeCamera("Camera", new Vector3(0, 5, -25), scene);
             camera.attachControl(canvas, true);
             const sunLight = new HemisphericLight("sunLight", new Vector3(0, 1, 0), scene);
 
             // Plane Mesh used for GUI elements
             const planeForMainMenu = Mesh.CreatePlane("planeForMainMenu", 20, scene);
-            planeForMainMenu.position.y = 0;
+            planeForMainMenu.position.y = 15;
 
             const planeForColorPicker = Mesh.CreatePlane("planeForColorPicker", 20, scene);
             planeForColorPicker.position.y = 5;
@@ -155,6 +157,30 @@ class App {
             });
 
             stackPanel.addControl(slider);
+
+            const ball = Mesh.CreateSphere("ball", 10, 2, scene);
+            ball.position.y = 2;
+            const ground = Mesh.CreateGround("ground", 32, 32, 2, scene);
+
+            // Setup physics
+            // See: https://doc.babylonjs.com/divingDeeper/physics/usingPhysicsEngine
+            // And: https://forum.babylonjs.com/t/cannon-js-npm-cannon-is-not-defined-in-v4-0-0-alpha-21-but-works-in-v4-0-0-alpha-16/844
+            const gravityVector = new Vector3(0, -9.81, 0);
+            const physicsPlugin = new CannonJSPlugin(true, 10, cannon);
+            scene.enablePhysics(gravityVector, physicsPlugin);
+
+            // To allow physics on an object it needs a physics imposter
+            ball.physicsImpostor = new PhysicsImpostor(ball, PhysicsImpostor.SphereImpostor, {
+                mass: 1,
+                restitution: 0.9
+            }, scene);
+            ground.physicsImpostor = new PhysicsImpostor(ground, PhysicsImpostor.BoxImpostor, {
+                mass: 0,
+                restitution: 0.9
+            }, scene);
+
+            // Apply force/impulse on ball
+            ball.physicsImpostor.applyImpulse(new Vector3(1, 20, -1), new Vector3(1, 2, 0))
 
             // VR config
             const VRHelper = scene.createDefaultVRExperience();
