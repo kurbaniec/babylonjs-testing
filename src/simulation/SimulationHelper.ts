@@ -16,13 +16,16 @@ export class SimulationHelper implements Subject {
     private snapshotThreshold = 1000 / this.snapshotCount;
     private lastDeltaTime = 0;
     // Used for example for sliders...
+    private playbackChangeIndex = false;
     private playbackPlayedPercent = 0.0;
     public onPlaybackChangeObservable: Observable<number>;
+    public onPlaybackEndObservable: Observable<void>;
 
     constructor(scene: Scene, engine: Engine) {
         this.scene = scene;
         this.engine = engine;
         this.onPlaybackChangeObservable = new Observable<number>();
+        this.onPlaybackEndObservable = new Observable<void>();
     }
 
     attach(observer: Observer): void {
@@ -65,11 +68,27 @@ export class SimulationHelper implements Subject {
                 // This is because the animations always use an index i and an index i+1
                 this.currentIndex = (this.observers[0] as SimulationMesh).currentIndex + 1;
                 const playbackPlayed = +(this.currentIndex / this.indexCount).toFixed(2);
-                if (this.playbackPlayedPercent !== playbackPlayed) {
+                if (this.playbackPlayedPercent !== playbackPlayed && !this.playbackChangeIndex) {
                     this.playbackPlayedPercent = playbackPlayed;
                     this.onPlaybackChangeObservable.notifyObservers(this.playbackPlayedPercent);
+                    // Stop playback
+                    if (this.playbackPlayedPercent === 1.0) {
+                        this.playback = false;
+                        this.currentIndex = 0;
+                        this.playbackChangeIndex = true;
+                        // Update SimulationMeshes to end their work...
+                        for (const observer of this.observers) {
+                            observer.update();
+                        }
+                        this.onPlaybackEndObservable.notifyObservers();
+                    }
                 }
             }
+            // Flag that indicates that playback should be forwarded/rewind
+            if (this.playbackChangeIndex) {
+                this.playbackChangeIndex = false;
+            }
+
         }
     }
 
@@ -108,6 +127,11 @@ export class SimulationHelper implements Subject {
         this.lastDeltaTime = 0;
     }
 
+    set playbackValue(playbackTime: number) {
+        this.playbackChangeIndex = true;
+        this.currentIndex = Math.round(playbackTime * this.indexCount);
+    }
+
     get isRecording(): boolean {
         return this.recording;
     }
@@ -126,5 +150,9 @@ export class SimulationHelper implements Subject {
 
     get currentSnapshotCount(): number {
         return this.snapshotCount;
+    }
+
+    get playbackChange(): boolean {
+        return this.playbackChangeIndex;
     }
 }

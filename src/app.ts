@@ -103,6 +103,7 @@ class App {
             sphere.position.x = 10;
             sphere.material = sphereMat;*/
 
+            /*
             // Video
             const planeForVideo = MeshBuilder.CreatePlane("planeForVideo", {
                 height: 1920 / 100,
@@ -119,27 +120,9 @@ class App {
             planeForVideo.material = videoMat;
             planeForVideo.position.y = 0;
             planeForVideo.position.x = 0;
-            planeForVideo.position.z = 5;
+            planeForVideo.position.z = 5;*/
 
-            // Plan Button
-            const planButton = GUI.Button.CreateSimpleButton("planButton", "Plan");
-            planButton.width = 0.3;
-            planButton.height = "100px";
-            planButton.color = "white";
-            planButton.fontSize = 50;
-            planButton.background = "green";
-            planButton.paddingTop = "50px";
-            planButton.onPointerUpObservable.add(function () {
-                if (!simulationHelper.isRecording) {
-                    simulationHelper.startSimulation();
-                    planButton.textBlock.text = "Stop";
-                } else {
-                    simulationHelper.stopSimulation();
-                    planButton.textBlock.text = "Plan";
-                }
-            });
-            stackPanel.addControl(planButton);
-
+            /*
             // Play/Pause Button
             const videoButton = GUI.Button.CreateSimpleButton("videoButton", "Play");
             videoButton.width = 0.3;
@@ -179,11 +162,76 @@ class App {
             videoTexture.video.addEventListener("timeupdate", function () {
                 slider.value = videoTexture.video.currentTime / videoTexture.video.duration;
             });
+             */
+
+            // Plan Button
+            const planButton = GUI.Button.CreateSimpleButton("planButton", "Plan");
+            planButton.width = 0.3;
+            planButton.height = "100px";
+            planButton.color = "white";
+            planButton.fontSize = 50;
+            planButton.background = "green";
+            planButton.paddingTop = "50px";
+            planButton.onPointerUpObservable.add(function () {
+                if (!simulationHelper.isRecording) {
+                    simulationHelper.startSimulation();
+                    planButton.textBlock.text = "Stop";
+                } else {
+                    simulationHelper.stopSimulation();
+                    //planButton.textBlock.text = "Plan";
+                    planButton.background = "gray";
+                    planButton.isEnabled = false;
+                }
+            });
+            stackPanel.addControl(planButton);
+
+            // Play/Pause Button
+            const playButton = GUI.Button.CreateSimpleButton("playButton", "Play");
+            playButton.width = 0.3;
+            playButton.height = "100px";
+            playButton.color = "white";
+            playButton.fontSize = 50;
+            playButton.background = "green";
+            playButton.paddingTop = "50px";
+            // Play/Pause playback on click
+            playButton.onPointerUpObservable.add(function () {
+                if (!simulationHelper.isPlayback) {
+                    simulationHelper.startPlayback();
+                    playButton.textBlock.text = "Stop";
+                } else {
+                    simulationHelper.stopPlayback();
+                    playButton.textBlock.text = "Play";
+                }
+            });
+            stackPanel.addControl(playButton);
+
+            // Slider
+            const slider = new GUI.Slider();
+            slider.width = "350px";
+            slider.height = "20px";
+            slider.minimum = 0.0;
+            slider.maximum = 1.0;
+            slider.value = 0.0;
+            // Update video when slider is manually moved
+            slider.onPointerUpObservable.add(() => {
+                simulationHelper.playbackValue = slider.value;
+            });
+            // Move slider when playback time is updated
+            simulationHelper.onPlaybackChangeObservable.add((value) => {
+                slider.value = value;
+            });
+            // Update button & SimulationHelper on playback end
+            simulationHelper.onPlaybackEndObservable.add(() => {
+                playButton.textBlock.text = "Play";
+            });
 
             stackPanel.addControl(slider);
 
             const ball = Mesh.CreateSphere("ball", 5, 2, scene);
             ball.position.y = 2;
+            const ball2 = Mesh.CreateSphere("ball2", 5, 2, scene);
+            ball2.position.y = 1;
+            ball2.position.x = 2;
             const ground = Mesh.CreateGround("ground", 32, 32, 2, scene);
 
             // SimulationHelper
@@ -200,8 +248,17 @@ class App {
                 }, s);
             }, (m: Mesh) => {
                 // Apply force/impulse on ball
-                console.log("Hey3");
                 m.physicsImpostor.applyImpulse(new Vector3(1, 20, -1), new Vector3(1, 2, 0));
+            }));
+            // Add ball2 to track
+            simulationHelper.attach(new SimulationMesh(ball2, (m: Mesh, s: Scene) => {
+                m.physicsImpostor = new PhysicsImpostor(ball2, PhysicsImpostor.SphereImpostor, {
+                    mass: 1,
+                    restitution: 0.9
+                }, s);
+            }, (m: Mesh) => {
+                // Apply force/impulse on ball
+                m.physicsImpostor.applyImpulse(new Vector3(1, 10, -1), new Vector3(1, 3, 0));
             }));
             // Add ground to track
             simulationHelper.attach(new SimulationMesh(ground, (m: Mesh, s: Scene) => {
@@ -210,10 +267,6 @@ class App {
                     restitution: 0.9
                 }, s);
             }));
-
-            simulationHelper.onPlaybackChangeObservable.add((value) => {
-                console.log(value);
-            });
 
             // VR config
             const VRHelper = scene.createDefaultVRExperience();

@@ -38,7 +38,6 @@ export class SimulationMesh implements Observer {
         if (subj.isRecording) {
             // Record simulation
             if (this.initialized == false) {
-                console.log("Hey2");
                 this.pos = [];
                 this.rot = [];
                 this.physics(this.mesh, subj.currentScene);
@@ -54,6 +53,10 @@ export class SimulationMesh implements Observer {
                     this.mesh.rotationQuaternion.z,
                     this.mesh.rotationQuaternion.w));
         } else {
+            // Used to rewind/forward playback
+            if (this.subj.playbackChange) {
+                this.animationIndex = this.subj.index;
+            }
             // Reset mesh on scene
             if (this.initialized == true) {
                 // Return to first position
@@ -77,59 +80,61 @@ export class SimulationMesh implements Observer {
     }
 
     runAnimation(): void {
-        if (this.animationRunning &&
-            this.pos[this.animationIndex] !== undefined && this.rot[this.animationIndex] !== undefined &&
-            this.pos[this.animationIndex + 1] !== undefined && this.rot[this.animationIndex + 1] !== undefined) {
+        if (this.animationRunning) {
+            if (this.pos[this.animationIndex] !== undefined && this.rot[this.animationIndex] !== undefined &&
+                this.pos[this.animationIndex + 1] !== undefined && this.rot[this.animationIndex + 1] !== undefined) {
 
-            const currentPos = this.pos[this.animationIndex].toVector3();
-            const currentRot = this.rot[this.animationIndex].toQuaternion();
+                const currentPos = this.pos[this.animationIndex].toVector3();
+                const currentRot = this.rot[this.animationIndex].toQuaternion();
 
-            const newPos = this.pos[this.animationIndex + 1].toVector3();
-            const newRot = this.rot[this.animationIndex + 1].toQuaternion();
+                const newPos = this.pos[this.animationIndex + 1].toVector3();
+                const newRot = this.rot[this.animationIndex + 1].toQuaternion();
 
-            const frameRate = 60;
-            const endFrame = 60 / this.subj.currentSnapshotCount;
+                // TODO this seems not exact
+                // Animation is to slow...
+                const frameRate = 10;
+                const endFrame = frameRate / this.subj.currentSnapshotCount;
 
-            // Translate all axes
-            // See: https://stackoverflow.com/a/39081427
-            const translation = new Animation("translation", "position", frameRate,
-                Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
-            const keyFramesPos = [];
-            keyFramesPos.push({
-                frame: 0,
-                value: currentPos,
-            });
-            keyFramesPos.push({
-                frame: endFrame,
-                value: newPos,
-            });
-            translation.setKeys(keyFramesPos);
+                // Translate all axes
+                // See: https://stackoverflow.com/a/39081427
+                const translation = new Animation("translation", "position", frameRate,
+                    Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
+                const keyFramesPos = [];
+                keyFramesPos.push({
+                    frame: 0,
+                    value: currentPos,
+                });
+                keyFramesPos.push({
+                    frame: endFrame,
+                    value: newPos,
+                });
+                translation.setKeys(keyFramesPos);
 
-            // Rotate also all axes
-            const rotation = new Animation("rotation", "rotationQuaternion", frameRate,
-                Animation.ANIMATIONTYPE_QUATERNION, Animation.ANIMATIONLOOPMODE_CYCLE);
-            const keyFramesRot = [];
-            keyFramesRot.push({
-                frame: 0,
-                value: currentRot,
-            });
-            keyFramesRot.push({
-                frame: endFrame,
-                value: newRot,
-            });
-            rotation.setKeys(keyFramesRot);
+                // Rotate also all axes
+                const rotation = new Animation("rotation", "rotationQuaternion", frameRate,
+                    Animation.ANIMATIONTYPE_QUATERNION, Animation.ANIMATIONLOOPMODE_CYCLE);
+                const keyFramesRot = [];
+                keyFramesRot.push({
+                    frame: 0,
+                    value: currentRot,
+                });
+                keyFramesRot.push({
+                    frame: endFrame,
+                    value: newRot,
+                });
+                rotation.setKeys(keyFramesRot);
 
-            // Combine animations
-            // See: https://doc.babylonjs.com/divingDeeper/animation/combineAnimations
-            // And: https://playground.babylonjs.com/#9WUJN#14
-            this.subj.currentScene.beginDirectAnimation(this.mesh, [translation, rotation], 0, endFrame, false, undefined, () => {
-                this.runAnimation();
-            });
+                // Combine animations
+                // See: https://doc.babylonjs.com/divingDeeper/animation/combineAnimations
+                // And: https://playground.babylonjs.com/#9WUJN#14
+                this.subj.currentScene.beginDirectAnimation(this.mesh, [translation, rotation], 0, endFrame, false, undefined, () => {
+                    this.runAnimation();
+                });
 
-            this.animationIndex++;
-        } else {
-            this.animationRunning = false;
+                this.animationIndex++;
+            } else {
+                this.animationRunning = false;
+            }
         }
-
     }
 }
