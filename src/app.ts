@@ -36,7 +36,6 @@ class App {
         const createDefaultEngine = function () {
             return new Engine(canvas, true, {preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false});
         };
-        let textblock;
 
         const createScene = function () {
             const scene = new Scene(engine);
@@ -50,119 +49,11 @@ class App {
             const planeForMainMenu = Mesh.CreatePlane("planeForMainMenu", 20, scene);
             planeForMainMenu.position.y = 15;
 
-            const planeForColorPicker = Mesh.CreatePlane("planeForColorPicker", 20, scene);
-            planeForColorPicker.position.y = 5;
-            planeForColorPicker.position.x = 20;
-
             // GUI
             const textureForMainMenu = GUI.AdvancedDynamicTexture.CreateForMesh(planeForMainMenu);
-            const textureForColorPicker = GUI.AdvancedDynamicTexture.CreateForMesh(planeForColorPicker);
-
             const stackPanel = new GUI.StackPanel();
             stackPanel.top = "300px";
             textureForMainMenu.addControl(stackPanel);
-
-            /*
-            const clickMeButton = GUI.Button.CreateSimpleButton("clickMeButton", "Click Me");
-            clickMeButton.width = 1;
-            clickMeButton.height = "100px";
-            clickMeButton.color = "white";
-            clickMeButton.fontSize = 50;
-            clickMeButton.background = "green";
-            clickMeButton.onPointerUpObservable.add(function () {
-                if (VRHelper) {
-                    VRHelper.displayLaserPointer = !VRHelper.displayLaserPointer;
-                }
-            });
-            stackPanel.addControl(clickMeButton);*/
-
-            /*textblock = new GUI.TextBlock();
-            textblock.height = "150px";
-            textblock.fontSize = 100;
-            textblock.text = "please pick an option:";
-            stackPanel.addControl(textblock);
-
-            addRadio("option 1", stackPanel);
-            addRadio("option 2", stackPanel);
-            addRadio("option 3", stackPanel);
-            addRadio("option 4", stackPanel);
-            addRadio("option 5", stackPanel);
-
-            const picker = new GUI.ColorPicker();
-            picker.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-            picker.height = "450px";
-            picker.width = "450px";
-            const sphereMat = new StandardMaterial("sphereMat", scene);
-            picker.onValueChangedObservable.add(function (value) { // value is a color3
-                sphereMat.diffuseColor = value;
-            });
-            textureForColorPicker.addControl(picker);
-
-            // Sphere material color will be updated by the value of the Color Picker
-            const sphere = Mesh.CreateSphere("sphere", 12, 2, scene);
-            sphere.position.x = 10;
-            sphere.material = sphereMat;*/
-
-            /*
-            // Video
-            const planeForVideo = MeshBuilder.CreatePlane("planeForVideo", {
-                height: 1920 / 100,
-                width: 1080 / 100,
-                sideOrientation: Mesh.DOUBLESIDE
-            }, scene);
-            const videoMat = new StandardMaterial("videoMat", scene);
-            const videoTexture = new VideoTexture("video", "textures/video.mp4", scene);
-            videoTexture.video.autoplay = false;
-            videoTexture.video.muted = true;
-            videoMat.diffuseTexture = videoTexture;
-            videoMat.emissiveColor = new Color3(1, 1, 1);
-
-            planeForVideo.material = videoMat;
-            planeForVideo.position.y = 0;
-            planeForVideo.position.x = 0;
-            planeForVideo.position.z = 5;*/
-
-            /*
-            // Play/Pause Button
-            const videoButton = GUI.Button.CreateSimpleButton("videoButton", "Play");
-            videoButton.width = 0.3;
-            videoButton.height = "100px";
-            videoButton.color = "white";
-            videoButton.fontSize = 50;
-            videoButton.background = "green";
-            videoButton.paddingTop = "50px";
-            // Play/Pause playback on click
-            videoButton.onPointerUpObservable.add(function () {
-                if (videoTexture.video.paused) {
-                    videoTexture.video.play();
-                    simulationHelper.startPlayback();
-                    videoButton.textBlock.text = "Stop";
-                } else {
-                    videoTexture.video.pause();
-                    simulationHelper.stopPlayback();
-                    videoButton.textBlock.text = "Play";
-                }
-            });
-            stackPanel.addControl(videoButton);
-
-            // Slider
-            const slider = new GUI.Slider();
-            slider.width = "350px";
-            slider.height = "20px";
-            slider.minimum = 0.0;
-            slider.maximum = 1.0;
-            slider.value = 0.0;
-            // Update video when slider is manually moved
-            slider.onPointerUpObservable.add(() => {
-                const duration = videoTexture.video.duration;
-                let skipTo = slider.value * duration;
-                if (!isNaN(skipTo)) videoTexture.video.currentTime = skipTo;
-            });
-            // Move slider when video time is updated
-            videoTexture.video.addEventListener("timeupdate", function () {
-                slider.value = videoTexture.video.currentTime / videoTexture.video.duration;
-            });
-             */
 
             // Plan Button
             const planButton = GUI.Button.CreateSimpleButton("planButton", "Plan");
@@ -275,26 +166,6 @@ class App {
             const retVal: [Scene, SimulationHelper] = [scene, simulationHelper];
             return retVal;
         };
-
-        const addRadio = function (text, parent) {
-            const button = new GUI.RadioButton();
-            button.width = "10px";
-            button.height = "10px";
-            button.color = "white";
-            button.background = "green";
-            button.onIsCheckedChangedObservable.add(function (state) {
-                if (state) {
-                    textblock.text = "You selected " + text;
-                }
-            });
-            const header = GUI.Control.AddHeader(button, text, "400px", {isHorizontal: true, controlFirst: true});
-            header.height = "100px";
-            header.children[1].fontSize = 80;
-            header.children[1].onPointerUpObservable.add(function () {
-                button.isChecked = !button.isChecked;
-            });
-            parent.addControl(header);
-        }
 
         async function initFunction() {
             const asyncEngineCreation = async function () {

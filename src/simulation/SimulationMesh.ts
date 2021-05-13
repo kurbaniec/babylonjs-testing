@@ -91,35 +91,39 @@ export class SimulationMesh implements Observer {
                 const newRot = this.rot[this.animationIndex + 1].toQuaternion();
 
                 // TODO this seems not exact
-                // Animation is to slow...
-                const frameRate = 10;
+                // Animation is too slow...
+                const frameRate = 60;
                 const endFrame = frameRate / this.subj.currentSnapshotCount;
 
                 // Translate all axes
                 // See: https://stackoverflow.com/a/39081427
                 const translation = new Animation("translation", "position", frameRate,
-                    Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
+                    Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CONSTANT);
                 const keyFramesPos = [];
                 keyFramesPos.push({
                     frame: 0,
                     value: currentPos,
                 });
+                // TODO Note: It seems that endFrame - 1 makes the animation go as fast as expected
+                // Why? Maybe because it finishes before the end determined by endFrame in
+                // beginDirectAnimation
+                // Needs probably more investigation...
                 keyFramesPos.push({
-                    frame: endFrame,
+                    frame: endFrame - 1,
                     value: newPos,
                 });
                 translation.setKeys(keyFramesPos);
 
                 // Rotate also all axes
                 const rotation = new Animation("rotation", "rotationQuaternion", frameRate,
-                    Animation.ANIMATIONTYPE_QUATERNION, Animation.ANIMATIONLOOPMODE_CYCLE);
+                    Animation.ANIMATIONTYPE_QUATERNION, Animation.ANIMATIONLOOPMODE_CONSTANT);
                 const keyFramesRot = [];
                 keyFramesRot.push({
                     frame: 0,
                     value: currentRot,
                 });
                 keyFramesRot.push({
-                    frame: endFrame,
+                    frame: endFrame - 1,
                     value: newRot,
                 });
                 rotation.setKeys(keyFramesRot);
@@ -128,10 +132,9 @@ export class SimulationMesh implements Observer {
                 // See: https://doc.babylonjs.com/divingDeeper/animation/combineAnimations
                 // And: https://playground.babylonjs.com/#9WUJN#14
                 this.subj.currentScene.beginDirectAnimation(this.mesh, [translation, rotation], 0, endFrame, false, undefined, () => {
+                    this.animationIndex++;
                     this.runAnimation();
                 });
-
-                this.animationIndex++;
             } else {
                 this.animationRunning = false;
             }
