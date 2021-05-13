@@ -2,6 +2,7 @@ import {CannonJSPlugin, Engine, Scene, Vector3} from "@babylonjs/core";
 import {Subject} from "../utils/Subject";
 import {Observer} from "../utils/Observer";
 import * as cannon from "cannon";
+import {SimulationMesh} from "./SimulationMesh";
 
 export class SimulationHelper implements Subject {
     private readonly scene: Scene;
@@ -52,6 +53,11 @@ export class SimulationHelper implements Subject {
         } else {
             for (const observer of this.observers) {
                 observer.update();
+            }
+            // Get current animation index
+            // Is a bit hacky and not idiomatic...
+            if (this.observers[0] !== undefined) {
+                this.currentIndex = (this.observers[0] as SimulationMesh).currentIndex;
             }
         }
     }

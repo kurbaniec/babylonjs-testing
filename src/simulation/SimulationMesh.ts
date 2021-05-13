@@ -26,6 +26,10 @@ export class SimulationMesh implements Observer {
         return this.subject as SimulationHelper;
     }
 
+    public get currentIndex(): number {
+        return this.animationIndex;
+    }
+
     constructor(mesh: Mesh, physics: InitFunc, callback?: AfterInitFunc) {
         this.mesh = mesh;
         this.physics = physics;
@@ -62,18 +66,22 @@ export class SimulationMesh implements Observer {
                 }
                 this.initialized = false;
             }
-            // Playback simulation
             if (subj.isPlayback) {
+                // Playback simulation
                 if (!this.animationRunning) {
                     this.animationRunning = true;
                     this.runAnimation();
                 }
+            } else {
+                // Stop simulation
+                this.animationRunning = false;
             }
         }
     }
 
     runAnimation(): void {
-        if (this.pos[this.animationIndex] !== undefined && this.rot[this.animationIndex] !== undefined &&
+        if (this.animationRunning &&
+            this.pos[this.animationIndex] !== undefined && this.rot[this.animationIndex] !== undefined &&
             this.pos[this.animationIndex + 1] !== undefined && this.rot[this.animationIndex + 1] !== undefined) {
 
             const currentPos = this.pos[this.animationIndex].toVector3();
