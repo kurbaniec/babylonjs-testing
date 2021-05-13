@@ -42,7 +42,7 @@ class App {
             const scene = new Scene(engine);
             const simulationHelper = new SimulationHelper(scene, engine);
 
-            const camera = new FreeCamera("Camera", new Vector3(0, 5, -25), scene);
+            const camera = new FreeCamera("Camera", new Vector3(0, 5, -35), scene);
             camera.attachControl(canvas, true);
             const sunLight = new HemisphericLight("sunLight", new Vector3(0, 1, 0), scene);
 
@@ -182,7 +182,7 @@ class App {
 
             stackPanel.addControl(slider);
 
-            const ball = Mesh.CreateSphere("ball", 10, 2, scene);
+            const ball = Mesh.CreateSphere("ball", 5, 2, scene);
             ball.position.y = 2;
             const ground = Mesh.CreateGround("ground", 32, 32, 2, scene);
 

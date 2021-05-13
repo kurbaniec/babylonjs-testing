@@ -11,7 +11,7 @@ export class SimulationHelper implements Subject {
     private playback = false;
     private currentIndex = 0;
     private indexCount = 0;
-    private snapshotCount = 3;
+    private snapshotCount = 25;
     private snapshotThreshold = 1000 / this.snapshotCount;
     private lastDeltaTime = 0;
 
@@ -35,17 +35,23 @@ export class SimulationHelper implements Subject {
     }
 
     notify(): void {
-        // Trigger only every x times (determined by snapshotThreshold) in one second
-        const currentTime = this.lastDeltaTime + this.engine.getDeltaTime();
-        if (currentTime > this.snapshotThreshold) {
-            this.lastDeltaTime = currentTime - this.snapshotThreshold;
-            // console.log(this.lastDeltaTime);
-            this.indexCount++;
+        if (this.isRecording) {
+            // Trigger only every x times (determined by snapshotThreshold) in one second
+            const currentTime = this.lastDeltaTime + this.engine.getDeltaTime();
+            if (currentTime > this.snapshotThreshold) {
+                this.lastDeltaTime = currentTime - this.snapshotThreshold;
+                // console.log(this.lastDeltaTime);
+                this.indexCount++;
+                for (const observer of this.observers) {
+                    observer.update(this);
+                }
+            } else {
+                this.lastDeltaTime = currentTime;
+            }
+        } else {
             for (const observer of this.observers) {
                 observer.update(this);
             }
-        } else {
-            this.lastDeltaTime = currentTime;
         }
     }
 
@@ -98,5 +104,9 @@ export class SimulationHelper implements Subject {
 
     get currentScene(): Scene {
         return this.scene;
+    }
+
+    get currentSnapshotCount(): number {
+        return this.snapshotCount;
     }
 }

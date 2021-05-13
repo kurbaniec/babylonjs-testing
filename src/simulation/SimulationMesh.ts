@@ -12,6 +12,11 @@ export class SimulationMesh implements Observer {
     private readonly physics: InitFunc;
     private readonly callback?: AfterInitFunc;
     private initialized = false;
+    private animationRunning = false;
+
+    // TODO get this from subject or update subject
+    private animationIndex = 0;
+
     private pos: SimPos[] = [];
     private rot: SimRot[] = [];
 
@@ -50,28 +55,58 @@ export class SimulationMesh implements Observer {
             }
             // Playback simulation
             if (subj.isPlayback) {
-                const frameRate = 10;
-                const xSlide = new Animation("xSlide", "position.x", frameRate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
-                const keyFrames = [];
+                if (!this.animationRunning &&
+                    this.pos[this.animationIndex] !== undefined && this.rot[this.animationIndex] !== undefined &&
+                    this.pos[this.animationIndex + 1] !== undefined && this.rot[this.animationIndex + 1] !== undefined) {
 
-                keyFrames.push({
-                    frame: 0,
-                    value: 2,
-                });
+                    const currentPos = this.pos[this.animationIndex].toVector3();
+                    const currentRot = this.rot[this.animationIndex].toVector3();
 
-                keyFrames.push({
-                    frame: frameRate,
-                    value: -2,
-                });
+                    const newPos = this.pos[this.animationIndex + 1].toVector3();
+                    const newRot = this.rot[this.animationIndex + 1].toVector3();
 
-                keyFrames.push({
-                    frame: 2 * frameRate,
-                    value: 2,
-                });
+                    const frameRate = 100;
+                    const endFrame = 100 / subj.currentSnapshotCount;
 
-                xSlide.setKeys(keyFrames);
-                this.mesh.animations.push(xSlide);
-                subj.currentScene.beginAnimation(this.mesh, 0, 2 * frameRate, false);
+                    // Translate all axes
+                    // See: https://stackoverflow.com/a/39081427
+                    const translation = new Animation("translation", "position", frameRate,
+                        Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
+                    const keyFramesPos = [];
+                    keyFramesPos.push({
+                        frame: 0,
+                        value: currentPos,
+                    });
+                    keyFramesPos.push({
+                        frame: endFrame,
+                        value: newPos,
+                    });
+                    translation.setKeys(keyFramesPos);
+
+                    // Rotate also all axes
+                    const rotation = new Animation("rotation", "rotation", frameRate,
+                        Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
+                    const keyFramesRot = [];
+                    keyFramesRot.push({
+                        frame: 0,
+                        value: currentRot,
+                    });
+                    keyFramesRot.push({
+                        frame: endFrame,
+                        value: newRot,
+                    });
+                    rotation.setKeys(keyFramesRot);
+
+                    // Combine animations
+                    // See: https://doc.babylonjs.com/divingDeeper/animation/combineAnimations
+                    // And: https://playground.babylonjs.com/#9WUJN#14
+                    this.animationRunning = true;
+                    subj.currentScene.beginDirectAnimation(this.mesh, [translation, rotation], 0, endFrame, false, undefined, () => {
+                        this.animationRunning = false;
+                    });
+
+                    this.animationIndex++;
+                }
             }
         }
 
