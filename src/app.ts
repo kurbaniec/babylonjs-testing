@@ -211,6 +211,10 @@ class App {
                 }, s);
             }));
 
+            simulationHelper.onPlaybackChangeObservable.add((value) => {
+                console.log(value);
+            });
+
             // VR config
             const VRHelper = scene.createDefaultVRExperience();
             VRHelper.enableInteractions();

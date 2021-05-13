@@ -13,10 +13,7 @@ export class SimulationMesh implements Observer {
     private readonly callback?: AfterInitFunc;
     private initialized = false;
     private animationRunning = false;
-
-    // TODO get this from subject or update subject
     private animationIndex = 0;
-
     private pos: SimPos[] = [];
     private rot: SimRot[] = [];
 
@@ -130,6 +127,8 @@ export class SimulationMesh implements Observer {
             });
 
             this.animationIndex++;
+        } else {
+            this.animationRunning = false;
         }
 
     }

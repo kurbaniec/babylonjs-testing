@@ -1,4 +1,4 @@
-import {CannonJSPlugin, Engine, Scene, Vector3} from "@babylonjs/core";
+import {CannonJSPlugin, Engine, Observable, Scene, Vector3} from "@babylonjs/core";
 import {Subject} from "../utils/Subject";
 import {Observer} from "../utils/Observer";
 import * as cannon from "cannon";
@@ -15,10 +15,14 @@ export class SimulationHelper implements Subject {
     private snapshotCount = 30;
     private snapshotThreshold = 1000 / this.snapshotCount;
     private lastDeltaTime = 0;
+    // Used for example for sliders...
+    private playbackPlayedPercent = 0.0;
+    public onPlaybackChangeObservable: Observable<number>;
 
     constructor(scene: Scene, engine: Engine) {
         this.scene = scene;
         this.engine = engine;
+        this.onPlaybackChangeObservable = new Observable<number>();
     }
 
     attach(observer: Observer): void {
@@ -57,7 +61,14 @@ export class SimulationHelper implements Subject {
             // Get current animation index
             // Is a bit hacky and not idiomatic...
             if (this.observers[0] !== undefined) {
-                this.currentIndex = (this.observers[0] as SimulationMesh).currentIndex;
+                // Note: SimulationMesh's currentIndex will always max out one before the full length count
+                // This is because the animations always use an index i and an index i+1
+                this.currentIndex = (this.observers[0] as SimulationMesh).currentIndex + 1;
+                const playbackPlayed = +(this.currentIndex / this.indexCount).toFixed(2);
+                if (this.playbackPlayedPercent !== playbackPlayed) {
+                    this.playbackPlayedPercent = playbackPlayed;
+                    this.onPlaybackChangeObservable.notifyObservers(this.playbackPlayedPercent);
+                }
             }
         }
     }
