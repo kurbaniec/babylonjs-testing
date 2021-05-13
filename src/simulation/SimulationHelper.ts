@@ -11,7 +11,7 @@ export class SimulationHelper implements Subject {
     private playback = false;
     private currentIndex = 0;
     private indexCount = 0;
-    private snapshotCount = 25;
+    private snapshotCount = 30;
     private snapshotThreshold = 1000 / this.snapshotCount;
     private lastDeltaTime = 0;
 
@@ -22,6 +22,7 @@ export class SimulationHelper implements Subject {
 
     attach(observer: Observer): void {
         if (!this.observers.includes(observer)) {
+            observer.subject = this;
             this.observers.push(observer);
         }
     }
@@ -43,14 +44,14 @@ export class SimulationHelper implements Subject {
                 // console.log(this.lastDeltaTime);
                 this.indexCount++;
                 for (const observer of this.observers) {
-                    observer.update(this);
+                    observer.update();
                 }
             } else {
                 this.lastDeltaTime = currentTime;
             }
         } else {
             for (const observer of this.observers) {
-                observer.update(this);
+                observer.update();
             }
         }
     }

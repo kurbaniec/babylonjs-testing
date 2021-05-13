@@ -5,6 +5,9 @@
 import {Subject} from "./Subject";
 
 export interface Observer {
+    // Subject itself
+    subject: Subject;
+
     // Receive update from subject.
-    update(subject: Subject): void;
+    update(): void;
 }
