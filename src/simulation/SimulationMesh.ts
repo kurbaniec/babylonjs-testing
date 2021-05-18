@@ -12,20 +12,13 @@ export class SimulationMesh implements Observer {
     private readonly physics: InitFunc;
     private readonly callback?: AfterInitFunc;
     private initialized = false;
-    private animationRunning = false;
-    private animationIndex = 0;
     private pos: SimPos[] = [];
     private rot: SimRot[] = [];
-    private animationInitialized = false;
 
     public subject: Subject;
 
     private get subj(): SimulationHelper {
         return this.subject as SimulationHelper;
-    }
-
-    public get currentIndex(): number {
-        return this.animationIndex;
     }
 
     constructor(mesh: Mesh, physics: InitFunc, callback?: AfterInitFunc) {
@@ -54,36 +47,10 @@ export class SimulationMesh implements Observer {
                     this.mesh.rotationQuaternion.z,
                     this.mesh.rotationQuaternion.w));
         } else if (subj.isPlayback) {
-            /*
-            // Used to rewind/forward playback
-            if (this.subj.playbackChange) {
-                this.animationIndex = this.subj.index;
-            }
-            // Reset mesh on scene
-            if (this.initialized == true) {
-                // Return to first position
-                if (this.pos[0] !== undefined && this.rot[0] !== undefined) {
-                    this.mesh.position = this.pos[0].toVector3();
-                    this.mesh.rotationQuaternion = this.rot[0].toQuaternion();
-                }
-                this.initialized = false;
-            }*/
-            /*
-            if (subj.isPlayback) {
-                // Playback simulation
-                if (!this.animationRunning) {
-                    this.animationRunning = true;
-                    this.runAnimation();
-                }
-            } else {
-                // Stop simulation
-                this.animationRunning = false;
-            }*/
-            if (subj.isPlayback) {
-                this.initAnimation()
-            }
-
+            // Initialize animations
+            this.initAnimation()
         } else {
+            // Render mesh at current position & rotation
             const currentIndex = this.subj.index;
             if (this.pos[currentIndex] !== undefined && this.rot[currentIndex] !== undefined) {
                 this.mesh.position = this.pos[currentIndex].toVector3();
@@ -124,69 +91,5 @@ export class SimulationMesh implements Observer {
         // Add animations to Animation Group of Simulation Helper
         this.subj.addAnimation(translation, this.mesh);
         this.subj.addAnimation(rotation, this.mesh);
-
-        this.animationInitialized = true;
-    }
-
-    runAnimation(): void {
-        if (this.animationRunning) {
-            if (this.pos[this.animationIndex] !== undefined && this.rot[this.animationIndex] !== undefined &&
-                this.pos[this.animationIndex + 1] !== undefined && this.rot[this.animationIndex + 1] !== undefined) {
-
-                const currentPos = this.pos[this.animationIndex].toVector3();
-                const currentRot = this.rot[this.animationIndex].toQuaternion();
-
-                const newPos = this.pos[this.animationIndex + 1].toVector3();
-                const newRot = this.rot[this.animationIndex + 1].toQuaternion();
-
-                // TODO this seems not exact
-                // Animation is too slow...
-                const frameRate = 60;
-                const endFrame = frameRate / this.subj.currentSnapshotCount;
-
-                // Translate all axes
-                // See: https://stackoverflow.com/a/39081427
-                const translation = new Animation("translation", "position", frameRate,
-                    Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CONSTANT);
-                const keyFramesPos = [];
-                keyFramesPos.push({
-                    frame: 0,
-                    value: currentPos,
-                });
-                // TODO Note: It seems that endFrame - 1 makes the animation go as fast as expected
-                // Why? Maybe because it finishes before the end determined by endFrame in
-                // beginDirectAnimation
-                // Needs probably more investigation...
-                keyFramesPos.push({
-                    frame: endFrame - 1,
-                    value: newPos,
-                });
-                translation.setKeys(keyFramesPos);
-
-                // Rotate also all axes
-                const rotation = new Animation("rotation", "rotationQuaternion", frameRate,
-                    Animation.ANIMATIONTYPE_QUATERNION, Animation.ANIMATIONLOOPMODE_CONSTANT);
-                const keyFramesRot = [];
-                keyFramesRot.push({
-                    frame: 0,
-                    value: currentRot,
-                });
-                keyFramesRot.push({
-                    frame: endFrame - 1,
-                    value: newRot,
-                });
-                rotation.setKeys(keyFramesRot);
-
-                // Combine animations
-                // See: https://doc.babylonjs.com/divingDeeper/animation/combineAnimations
-                // And: https://playground.babylonjs.com/#9WUJN#14
-                this.subj.currentScene.beginDirectAnimation(this.mesh, [translation, rotation], 0, endFrame, false, undefined, () => {
-                    this.animationIndex++;
-                    this.runAnimation();
-                });
-            } else {
-                this.animationRunning = false;
-            }
-        }
     }
 }

@@ -12,20 +12,17 @@ export class SimulationHelper implements Subject {
     private playback = false;
     private currentIndex = 0;
     private indexCount = 0;
-    private snapshotCount = 30;
+    private snapshotCount = 60;
     private snapshotThreshold = 1000 / this.snapshotCount;
     private lastDeltaTime = 0;
-    // Used for example for sliders...
-    private playbackChangeIndex = false;
+    // Events
     private playbackPlayedPercent = 0.0;
     public onPlaybackChangeObservable: Observable<number>;
     public onPlaybackEndObservable: Observable<void>;
-    // *new* features
-    // Rework animation
+    // Simulation properties
     private framerate: number = 60;
     private animationGroup: AnimationGroup;
     private animationFrame: number;
-    private animationInitialized = false;
     private animationStarted = false;
     private animationPaused = false;
 
@@ -35,6 +32,9 @@ export class SimulationHelper implements Subject {
         this.animationGroup = new AnimationGroup("SimulationPlayback", this.scene);
         this.onPlaybackChangeObservable = new Observable<number>();
         this.onPlaybackEndObservable = new Observable<void>();
+        if (this.snapshotCount > this.framerate) {
+            throw new Error("Snapshot Count cannot be greater than framerate")
+        }
     }
 
     attach(observer: Observer): void {
@@ -58,7 +58,6 @@ export class SimulationHelper implements Subject {
             const currentTime = this.lastDeltaTime + this.engine.getDeltaTime();
             if (currentTime > this.snapshotThreshold) {
                 this.lastDeltaTime = currentTime - this.snapshotThreshold;
-                // console.log(this.lastDeltaTime);
                 this.indexCount++;
                 for (const observer of this.observers) {
                     observer.update();
@@ -83,15 +82,16 @@ export class SimulationHelper implements Subject {
                 this.animationStarted = true;
             }
             if (this.animationPaused) {
+                // Resume animation if paused
                 this.animationGroup.play();
                 this.animationGroup.goToFrame(this.animationFrame);
                 this.animationPaused = false;
             }
 
-            // Get last frame & Notify observers for onPlaybackChangeObservable
-            // See: https://forum.babylonjs.com/t/get-current-frame-of-animationgroup/10108/2
             if (!this.animationPaused &&
                 this.animationGroup.animatables[0].masterFrame !== undefined) {
+                // Get last frame & Notify observers for onPlaybackChangeObservable
+                // See: https://forum.babylonjs.com/t/get-current-frame-of-animationgroup/10108/2
                 this.animationFrame = this.animationGroup.animatables[0].masterFrame;
                 // this.animationGroup.to marks the endframe
                 // Calculate playback percentage
@@ -100,36 +100,8 @@ export class SimulationHelper implements Subject {
                 // Calculate current index
                 this.currentIndex = Math.round(this.indexCount * this.playbackPlayedPercent);
             }
-            /*
-            // Get current animation index
-            // Is a bit hacky and not idiomatic...
-            if (this.observers[0] !== undefined) {
-                // Note: SimulationMesh's currentIndex will always max out one before the full length count
-                // This is because the animations always use an index i and an index i+1
-                this.currentIndex = (this.observers[0] as SimulationMesh).currentIndex + 1;
-                const playbackPlayed = +(this.currentIndex / this.indexCount).toFixed(2);
-                if (this.playbackPlayedPercent !== playbackPlayed && !this.playbackChangeIndex) {
-                    this.playbackPlayedPercent = playbackPlayed;
-                    this.onPlaybackChangeObservable.notifyObservers(this.playbackPlayedPercent);
-                    // Stop playback
-                    if (this.playbackPlayedPercent === 1.0) {
-                        this.playback = false;
-                        this.currentIndex = 0;
-                        this.playbackChangeIndex = true;
-                        // Update SimulationMeshes to end their work...
-                        for (const observer of this.observers) {
-                            observer.update();
-                        }
-                        this.onPlaybackEndObservable.notifyObservers();
-                    }
-                }
-            }
-            // Flag that indicates that playback should be forwarded/rewind
-            if (this.playbackChangeIndex) {
-                this.playbackChangeIndex = false;
-            }*/
         } else {
-            // Reset position
+            // Render current position via currentIndex
             for (const observer of this.observers) {
                 observer.update();
             }
@@ -137,7 +109,6 @@ export class SimulationHelper implements Subject {
     }
 
     set playbackValue(playbackTime: number) {
-        //this.playbackChangeIndex = true;
         this.currentIndex = Math.round(playbackTime * this.indexCount);
         if (this.playback) {
             this.animationPaused = true;
@@ -211,9 +182,5 @@ export class SimulationHelper implements Subject {
 
     get currentFrameRate(): number {
         return this.framerate;
-    }
-
-    get playbackChange(): boolean {
-        return this.playbackChangeIndex;
     }
 }
