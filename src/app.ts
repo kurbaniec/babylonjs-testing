@@ -103,18 +103,19 @@ class App {
             slider.minimum = 0.0;
             slider.maximum = 1.0;
             slider.value = 0.0;
-            // Update video when slider is manually moved
-            slider.onPointerUpObservable.add(() => {
+            /**
+             // Update video when slider is manually moved
+             slider.onPointerUpObservable.add(() => {
                 simulationHelper.playbackValue = slider.value;
             });
-            // Move slider when playback time is updated
-            simulationHelper.onPlaybackChangeObservable.add((value) => {
+             // Move slider when playback time is updated
+             simulationHelper.onPlaybackChangeObservable.add((value) => {
                 slider.value = value;
             });
-            // Update button & SimulationHelper on playback end
-            simulationHelper.onPlaybackEndObservable.add(() => {
+             // Update button & SimulationHelper on playback end
+             simulationHelper.onPlaybackEndObservable.add(() => {
                 playButton.textBlock.text = "Play";
-            });
+            });*/
 
             stackPanel.addControl(slider);
 

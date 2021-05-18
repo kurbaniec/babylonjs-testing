@@ -53,7 +53,8 @@ export class SimulationMesh implements Observer {
                     this.mesh.rotationQuaternion.y,
                     this.mesh.rotationQuaternion.z,
                     this.mesh.rotationQuaternion.w));
-        } else {
+        } else if (subj.isPlayback) {
+            /*
             // Used to rewind/forward playback
             if (this.subj.playbackChange) {
                 this.animationIndex = this.subj.index;
@@ -66,7 +67,7 @@ export class SimulationMesh implements Observer {
                     this.mesh.rotationQuaternion = this.rot[0].toQuaternion();
                 }
                 this.initialized = false;
-            }
+            }*/
             /*
             if (subj.isPlayback) {
                 // Playback simulation
@@ -81,6 +82,12 @@ export class SimulationMesh implements Observer {
             if (subj.isPlayback && !this.animationInitialized) {
                 this.initAnimation()
             }
+
+        } else {
+            if (this.pos[0] !== undefined && this.rot[0] !== undefined) {
+                this.mesh.position = this.pos[0].toVector3();
+                this.mesh.rotationQuaternion = this.rot[0].toQuaternion();
+            }
         }
     }
 
@@ -93,8 +100,8 @@ export class SimulationMesh implements Observer {
         const keyFramesPos = [];
         for (let i = 0; i < this.pos.length; i++) {
             keyFramesPos.push({
-                frame: (frameRate / this.pos.length) * i,
-                value: this.pos[i]
+                frame: (frameRate / this.subj.currentSnapshotCount) * i,
+                value: this.pos[i].toVector3()
             });
         }
         translation.setKeys(keyFramesPos);
@@ -105,15 +112,23 @@ export class SimulationMesh implements Observer {
         const keyFramesRot = [];
         for (let i = 0; i < this.rot.length; i++) {
             keyFramesRot.push({
-                frame: (frameRate / this.rot.length) * i,
-                value: this.rot[i]
+                frame: (frameRate / this.subj.currentSnapshotCount) * i,
+                value: this.rot[i].toQuaternion()
             });
         }
-        translation.setKeys(keyFramesRot);
+        rotation.setKeys(keyFramesRot);
+
+        console.log(keyFramesPos);
 
         // Add animations to Animation Group of Simulation Helper
-        this.subj.addAnimation(translation, this.mesh);
-        this.subj.addAnimation(rotation, this.mesh);
+        //this.subj.addAnimation(translation, this.mesh);
+        //this.subj.addAnimation(rotation, this.mesh);
+        const endFrame = (frameRate / this.subj.currentSnapshotCount) * (this.pos.length - 1);
+        this.subj.currentScene.beginDirectAnimation(this.mesh, [translation, rotation], 0, endFrame, false, undefined, () => {
+            //this.animationIndex++;
+            //this.runAnimation();
+            console.log("Animation End");
+        });
 
         this.animationInitialized = true;
     }

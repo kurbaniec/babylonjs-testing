@@ -22,12 +22,14 @@ export class SimulationHelper implements Subject {
     public onPlaybackEndObservable: Observable<void>;
     // *new* features
     // Rework animation
-    private animationGroup: AnimationGroup
+    private animationGroup: AnimationGroup;
+    private animationFrame: number;
+    private animStarted = false;
 
     constructor(scene: Scene, engine: Engine) {
         this.scene = scene;
         this.engine = engine;
-        this.animationGroup = new AnimationGroup("SimulationPlayback");
+        this.animationGroup = new AnimationGroup("SimulationPlayback", this.scene);
         this.onPlaybackChangeObservable = new Observable<number>();
         this.onPlaybackEndObservable = new Observable<void>();
     }
@@ -61,10 +63,27 @@ export class SimulationHelper implements Subject {
             } else {
                 this.lastDeltaTime = currentTime;
             }
-        } else {
-            for (const observer of this.observers) {
-                observer.update();
+        } else if (this.isPlayback) {
+            // Initialize animations on first playback
+            //if (this.animationGroup.targetedAnimations.length == 0) {
+            if (!this.animStarted) {
+                for (const observer of this.observers) {
+                    observer.update();
+                }
+                this.animationGroup.onAnimationEndObservable.add(() => {
+                    console.log("Animation End");
+                });
+
+                //this.animationGroup.normalize(0, this.animationGroup.to);
+                // this.animationGroup.start(false, undefined, 0, undefined, undefined);
+                //this.scene.stopAllAnimations();
+                //this.scene.animationGroups[0].start(false);
+                this.animStarted = true;
             }
+            // Get last frame
+            //this.animationFrame = this.animationGroup.to;
+            //console.log(this.animationFrame);
+            /*
             // Get current animation index
             // Is a bit hacky and not idiomatic...
             if (this.observers[0] !== undefined) {
@@ -91,8 +110,12 @@ export class SimulationHelper implements Subject {
             // Flag that indicates that playback should be forwarded/rewind
             if (this.playbackChangeIndex) {
                 this.playbackChangeIndex = false;
+            }*/
+        } else {
+            // Reset position
+            for (const observer of this.observers) {
+                observer.update();
             }
-
         }
     }
 
