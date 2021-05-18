@@ -79,20 +79,21 @@ export class SimulationMesh implements Observer {
                 // Stop simulation
                 this.animationRunning = false;
             }*/
-            if (subj.isPlayback && !this.animationInitialized) {
+            if (subj.isPlayback) {
                 this.initAnimation()
             }
 
         } else {
-            if (this.pos[0] !== undefined && this.rot[0] !== undefined) {
-                this.mesh.position = this.pos[0].toVector3();
-                this.mesh.rotationQuaternion = this.rot[0].toQuaternion();
+            const currentIndex = this.subj.index;
+            if (this.pos[currentIndex] !== undefined && this.rot[currentIndex] !== undefined) {
+                this.mesh.position = this.pos[currentIndex].toVector3();
+                this.mesh.rotationQuaternion = this.rot[currentIndex].toQuaternion();
             }
         }
     }
 
     initAnimation(): void {
-        const frameRate = 60;
+        const frameRate = this.subj.currentFrameRate;
 
         // Setup translation
         const translation = new Animation("translation", "position", frameRate,
@@ -121,14 +122,8 @@ export class SimulationMesh implements Observer {
         console.log(keyFramesPos);
 
         // Add animations to Animation Group of Simulation Helper
-        //this.subj.addAnimation(translation, this.mesh);
-        //this.subj.addAnimation(rotation, this.mesh);
-        const endFrame = (frameRate / this.subj.currentSnapshotCount) * (this.pos.length - 1);
-        this.subj.currentScene.beginDirectAnimation(this.mesh, [translation, rotation], 0, endFrame, false, undefined, () => {
-            //this.animationIndex++;
-            //this.runAnimation();
-            console.log("Animation End");
-        });
+        this.subj.addAnimation(translation, this.mesh);
+        this.subj.addAnimation(rotation, this.mesh);
 
         this.animationInitialized = true;
     }

@@ -22,9 +22,12 @@ export class SimulationHelper implements Subject {
     public onPlaybackEndObservable: Observable<void>;
     // *new* features
     // Rework animation
+    private framerate: number = 60;
     private animationGroup: AnimationGroup;
     private animationFrame: number;
-    private animStarted = false;
+    private animationInitialized = false;
+    private animationStarted = false;
+    private animationPaused = false;
 
     constructor(scene: Scene, engine: Engine) {
         this.scene = scene;
@@ -64,25 +67,39 @@ export class SimulationHelper implements Subject {
                 this.lastDeltaTime = currentTime;
             }
         } else if (this.isPlayback) {
-            // Initialize animations on first playback
-            //if (this.animationGroup.targetedAnimations.length == 0) {
-            if (!this.animStarted) {
+            if (!this.animationStarted) {
+                // Initialize animations in SimulationMesh
                 for (const observer of this.observers) {
                     observer.update();
                 }
                 this.animationGroup.onAnimationEndObservable.add(() => {
-                    console.log("Animation End");
+                    this.playback = false;
+                    this.animationStarted = false;
+                    this.playbackPlayedPercent = 0.0;
+                    this.onPlaybackChangeObservable.notifyObservers(1.0);
+                    this.onPlaybackEndObservable.notifyObservers();
                 });
-
-                //this.animationGroup.normalize(0, this.animationGroup.to);
-                // this.animationGroup.start(false, undefined, 0, undefined, undefined);
-                //this.scene.stopAllAnimations();
-                //this.scene.animationGroups[0].start(false);
-                this.animStarted = true;
+                this.animationGroup.play();
+                this.animationStarted = true;
             }
-            // Get last frame
-            //this.animationFrame = this.animationGroup.to;
-            //console.log(this.animationFrame);
+            if (this.animationPaused) {
+                this.animationGroup.play();
+                this.animationGroup.goToFrame(this.animationFrame);
+                this.animationPaused = false;
+            }
+
+            // Get last frame & Notify observers for onPlaybackChangeObservable
+            // See: https://forum.babylonjs.com/t/get-current-frame-of-animationgroup/10108/2
+            if (!this.animationPaused &&
+                this.animationGroup.animatables[0].masterFrame !== undefined) {
+                this.animationFrame = this.animationGroup.animatables[0].masterFrame;
+                // this.animationGroup.to marks the endframe
+                // Calculate playback percentage
+                this.playbackPlayedPercent = +(this.animationFrame / this.animationGroup.to).toFixed(2)
+                this.onPlaybackChangeObservable.notifyObservers(this.playbackPlayedPercent)
+                // Calculate current index
+                this.currentIndex = Math.round(this.indexCount * this.playbackPlayedPercent);
+            }
             /*
             // Get current animation index
             // Is a bit hacky and not idiomatic...
@@ -119,6 +136,17 @@ export class SimulationHelper implements Subject {
         }
     }
 
+    set playbackValue(playbackTime: number) {
+        //this.playbackChangeIndex = true;
+        this.currentIndex = Math.round(playbackTime * this.indexCount);
+        if (this.playback) {
+            this.animationPaused = true;
+            this.animationGroup.pause();
+            this.animationFrame = Math.round(this.animationGroup.to * playbackTime);
+            console.log("Hey!!!", this.animationFrame, playbackTime);
+        }
+    }
+
     startSimulation() {
         this.recording = true;
         // Setup physics
@@ -132,8 +160,9 @@ export class SimulationHelper implements Subject {
     }
 
     stopSimulation() {
-        this.recording = false;
         this.scene.disablePhysicsEngine();
+        this.currentIndex = 0;
+        this.recording = false;
     }
 
     startPlayback() {
@@ -142,6 +171,8 @@ export class SimulationHelper implements Subject {
 
     stopPlayback() {
         this.playback = false;
+        this.animationPaused = true;
+        this.animationGroup.pause();
     }
 
     addAnimation(animation: Animation, mesh: Mesh) {
@@ -156,11 +187,6 @@ export class SimulationHelper implements Subject {
         this.snapshotCount = 3;
         this.snapshotThreshold = 1000 / this.snapshotCount;
         this.lastDeltaTime = 0;
-    }
-
-    set playbackValue(playbackTime: number) {
-        this.playbackChangeIndex = true;
-        this.currentIndex = Math.round(playbackTime * this.indexCount);
     }
 
     get isRecording(): boolean {
@@ -181,6 +207,10 @@ export class SimulationHelper implements Subject {
 
     get currentSnapshotCount(): number {
         return this.snapshotCount;
+    }
+
+    get currentFrameRate(): number {
+        return this.framerate;
     }
 
     get playbackChange(): boolean {
