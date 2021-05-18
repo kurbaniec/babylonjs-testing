@@ -37,7 +37,7 @@ class App {
             return new Engine(canvas, true, {preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false});
         };
 
-        const createScene = function () {
+        const createScene = async function () {
             const scene = new Scene(engine);
             const simulationHelper = new SimulationHelper(scene, engine);
 
@@ -167,8 +167,8 @@ class App {
             }));
 
             // VR config
-            const VRHelper = scene.createDefaultVRExperience();
-            VRHelper.enableInteractions();
+            // @ts-ignore
+            const xrHelper = await scene.createDefaultXRExperienceAsync();
 
             const retVal: [Scene, SimulationHelper] = [scene, simulationHelper];
             return retVal;
@@ -186,7 +186,7 @@ class App {
 
             engine = await asyncEngineCreation();
             if (!engine) throw 'engine should not be null.';
-            [scene, simulationHelper] = createScene();
+            [scene, simulationHelper] = await createScene();
         }
 
         initFunction().then(() => {

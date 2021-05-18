@@ -110,10 +110,10 @@ export class SimulationHelper implements Subject {
 
     set playbackValue(playbackTime: number) {
         this.currentIndex = Math.round(playbackTime * this.indexCount);
+        this.animationFrame = Math.round(this.animationGroup.to * playbackTime);
         if (this.playback) {
             this.animationPaused = true;
             this.animationGroup.pause();
-            this.animationFrame = Math.round(this.animationGroup.to * playbackTime);
             console.log("Hey!!!", this.animationFrame, playbackTime);
         }
     }
