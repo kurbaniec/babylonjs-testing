@@ -1,4 +1,4 @@
-import {CannonJSPlugin, Engine, Observable, Scene, Vector3} from "@babylonjs/core";
+import {Animation, AnimationGroup, CannonJSPlugin, Engine, Mesh, Observable, Scene, Vector3} from "@babylonjs/core";
 import {Subject} from "../utils/Subject";
 import {Observer} from "../utils/Observer";
 import * as cannon from "cannon";
@@ -20,10 +20,14 @@ export class SimulationHelper implements Subject {
     private playbackPlayedPercent = 0.0;
     public onPlaybackChangeObservable: Observable<number>;
     public onPlaybackEndObservable: Observable<void>;
+    // *new* features
+    // Rework animation
+    private animationGroup: AnimationGroup
 
     constructor(scene: Scene, engine: Engine) {
         this.scene = scene;
         this.engine = engine;
+        this.animationGroup = new AnimationGroup("SimulationPlayback");
         this.onPlaybackChangeObservable = new Observable<number>();
         this.onPlaybackEndObservable = new Observable<void>();
     }
@@ -115,6 +119,10 @@ export class SimulationHelper implements Subject {
 
     stopPlayback() {
         this.playback = false;
+    }
+
+    addAnimation(animation: Animation, mesh: Mesh) {
+        this.animationGroup.addTargetedAnimation(animation, mesh);
     }
 
     restart() {

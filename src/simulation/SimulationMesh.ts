@@ -16,6 +16,7 @@ export class SimulationMesh implements Observer {
     private animationIndex = 0;
     private pos: SimPos[] = [];
     private rot: SimRot[] = [];
+    private animationInitialized = false;
 
     public subject: Subject;
 
@@ -66,6 +67,7 @@ export class SimulationMesh implements Observer {
                 }
                 this.initialized = false;
             }
+            /*
             if (subj.isPlayback) {
                 // Playback simulation
                 if (!this.animationRunning) {
@@ -75,8 +77,45 @@ export class SimulationMesh implements Observer {
             } else {
                 // Stop simulation
                 this.animationRunning = false;
+            }*/
+            if (subj.isPlayback && !this.animationInitialized) {
+                this.initAnimation()
             }
         }
+    }
+
+    initAnimation(): void {
+        const frameRate = 60;
+
+        // Setup translation
+        const translation = new Animation("translation", "position", frameRate,
+            Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CONSTANT);
+        const keyFramesPos = [];
+        for (let i = 0; i < this.pos.length; i++) {
+            keyFramesPos.push({
+                frame: (frameRate / this.pos.length) * i,
+                value: this.pos[i]
+            });
+        }
+        translation.setKeys(keyFramesPos);
+
+        // Setup rotation
+        const rotation = new Animation("rotation", "rotationQuaternion", frameRate,
+            Animation.ANIMATIONTYPE_QUATERNION, Animation.ANIMATIONLOOPMODE_CONSTANT);
+        const keyFramesRot = [];
+        for (let i = 0; i < this.rot.length; i++) {
+            keyFramesRot.push({
+                frame: (frameRate / this.rot.length) * i,
+                value: this.rot[i]
+            });
+        }
+        translation.setKeys(keyFramesRot);
+
+        // Add animations to Animation Group of Simulation Helper
+        this.subj.addAnimation(translation, this.mesh);
+        this.subj.addAnimation(rotation, this.mesh);
+
+        this.animationInitialized = true;
     }
 
     runAnimation(): void {
