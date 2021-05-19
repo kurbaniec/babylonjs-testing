@@ -34,7 +34,6 @@ class App {
         let scene: Scene = null;
         let simulationHelper: SimulationHelper = null;
         let xrHelper: WebXRDefaultExperience = null;
-        let xrInitialized = false;
         let leftControllerMesh: AbstractMesh = null;
         let rightControllerMesh: AbstractMesh = null;
         let sceneToRender = null;
@@ -114,6 +113,8 @@ class App {
             slider.onPointerDownObservable.add(() => {
                 sliderUpdate = false;
             });
+            // TODO use other event?
+            // Is triggered when only hovering about the slider
             slider.onPointerOutObservable.add(() => {
                 simulationHelper.playbackValue = slider.value;
                 sliderUpdate = true;
@@ -145,7 +146,7 @@ class App {
                 // Well, when the physics engine gets disabled, everything needs to be setup again like the imposters
                 // (I tried storing the PhysicsImposter object and re-assigning it to the mesh
                 //  when the physics are restored but it did not work)
-                m.physicsImpostor = new PhysicsImpostor(ball, PhysicsImpostor.SphereImpostor, {
+                m.physicsImpostor = new PhysicsImpostor(m, PhysicsImpostor.SphereImpostor, {
                     mass: 1,
                     restitution: 0.9
                 }, s);
@@ -155,7 +156,7 @@ class App {
             }));
             // Add ball2 to track
             simulationHelper.attach(new SimulationMesh(ball2, (m: Mesh, s: Scene) => {
-                m.physicsImpostor = new PhysicsImpostor(ball2, PhysicsImpostor.SphereImpostor, {
+                m.physicsImpostor = new PhysicsImpostor(m, PhysicsImpostor.SphereImpostor, {
                     mass: 1,
                     restitution: 0.9
                 }, s);
@@ -165,7 +166,7 @@ class App {
             }));
             // Add ground to track
             simulationHelper.attach(new SimulationMesh(ground, (m: Mesh, s: Scene) => {
-                m.physicsImpostor = new PhysicsImpostor(ground, PhysicsImpostor.BoxImpostor, {
+                m.physicsImpostor = new PhysicsImpostor(m, PhysicsImpostor.BoxImpostor, {
                     mass: 0,
                     restitution: 0.9
                 }, s);
@@ -176,18 +177,17 @@ class App {
             //xrHelper = await scene.createDefaultXRExperienceAsync();
             xrHelper = await WebXRDefaultExperience.CreateAsync(scene, undefined).then((defaultExperience) => {  //
                 defaultExperience.input.onControllerAddedObservable.add((controller: WebXRInputSource) => {
-
-
                     // Get position
                     // See: https://forum.babylonjs.com/t/xr-experience-helper-and-camera-controller-positions/9628/12
                     if (controller.inputSource.handedness === "left") {
-                        //console.log("Grip: ", controller.grip.position);
+                        // TODO bind GUI to left controller
+                        // TODO checkout this later on
+                        // https://forum.babylonjs.com/t/how-to-get-the-position-and-rotation-of-xr-controllers/19576/3
+                        // console.log(xrHelper.input.controllers);
                         leftControllerMesh = controller.grip;
                     } else if (controller.inputSource.handedness === "right") {
                         rightControllerMesh = controller.grip;
                     }
-
-
                     /*
                     // hands are controllers to; do not want to go do this code; when it is a hand
                     const isHand = controller.inputSource.hand;
@@ -207,11 +207,6 @@ class App {
                     });*/
                 });
             });
-
-            // TODO bind GUI to left controller
-            // TODO checkout this later on
-            // https://forum.babylonjs.com/t/how-to-get-the-position-and-rotation-of-xr-controllers/19576/3
-            // console.log(xrHelper.input.controllers);
 
 
             const retVal: [Scene, SimulationHelper] = [scene, simulationHelper];
@@ -238,26 +233,12 @@ class App {
             engine.runRenderLoop(function () {
                 if (sceneToRender && sceneToRender.activeCamera) {
                     if (leftControllerMesh !== null) {
-                        console.log("Left controller position: ", leftControllerMesh.position);
+                        //console.log("Left controller: ", leftControllerMesh.position, leftControllerMesh.rotationQuaternion);
                     }
                     if (rightControllerMesh !== null) {
-                        console.log("Right controller position: ", rightControllerMesh.position);
+                        //console.log("Right controller position: ", rightControllerMesh.position);
+                        //console.log("Right controller rotation: ", rightControllerMesh.rotationQuaternion);
                     }
-                    /*
-                    if (!xrInitialized) {
-                        if (xrHelper.input.controllers.length > 0) {
-                            console.log(xrHelper.input.controllers);
-                            xrHelper.input.controllers.forEach((c) => {
-                                console.log(c);
-                                console.log(c.inputSource);
-                                console.log(c.inputSource.handedness);
-                                console.log(c.motionController.handedness);
-                                console.log(c.inputSource)
-                                console.log(c.uniqueId);
-                            });
-                            xrInitialized = true;
-                        }
-                    }*/
                     sceneToRender.render();
                     simulationHelper.notify();
                 }
