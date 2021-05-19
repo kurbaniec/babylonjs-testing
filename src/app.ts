@@ -12,7 +12,7 @@ import {
     Scene,
     StandardMaterial,
     Vector3,
-    VideoTexture,
+    VideoTexture, WebXRDefaultExperience, WebXRExperienceHelper,
 } from "@babylonjs/core";
 import * as GUI from "@babylonjs/gui";
 import * as cannon from "cannon";
@@ -32,6 +32,8 @@ class App {
         let engine: Engine = null;
         let scene: Scene = null;
         let simulationHelper: SimulationHelper = null;
+        let xrHelper: WebXRDefaultExperience = null;
+        let xrInitialized = false;
         let sceneToRender = null;
         const createDefaultEngine = function () {
             return new Engine(canvas, true, {preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false});
@@ -168,7 +170,11 @@ class App {
 
             // VR config
             // @ts-ignore
-            const xrHelper = await scene.createDefaultXRExperienceAsync();
+            xrHelper = await scene.createDefaultXRExperienceAsync();
+
+            // TODO bind GUI to left controller
+            console.log(xrHelper.input.controllers);
+
 
             const retVal: [Scene, SimulationHelper] = [scene, simulationHelper];
             return retVal;
@@ -193,6 +199,17 @@ class App {
             sceneToRender = scene
             engine.runRenderLoop(function () {
                 if (sceneToRender && sceneToRender.activeCamera) {
+                    if (!xrInitialized) {
+                        if (xrHelper.input.controllers.length > 0) {
+                            console.log(xrHelper.input.controllers);
+                            xrHelper.input.controllers.forEach((c) => {
+                                console.log(c);
+                                console.log(c.inputSource);
+                                console.log(c.inputSource.handedness);
+                            });
+                            xrInitialized = true;
+                        }
+                    }
                     sceneToRender.render();
                     simulationHelper.notify();
                 }
