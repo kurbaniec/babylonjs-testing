@@ -2,6 +2,7 @@ import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import {
+    AbstractMesh,
     CannonJSPlugin,
     Color3,
     Engine,
@@ -12,7 +13,7 @@ import {
     Scene,
     StandardMaterial,
     Vector3,
-    VideoTexture, WebXRDefaultExperience, WebXRExperienceHelper,
+    VideoTexture, WebXRAbstractMotionController, WebXRDefaultExperience, WebXRExperienceHelper, WebXRInputSource,
 } from "@babylonjs/core";
 import * as GUI from "@babylonjs/gui";
 import * as cannon from "cannon";
@@ -34,6 +35,8 @@ class App {
         let simulationHelper: SimulationHelper = null;
         let xrHelper: WebXRDefaultExperience = null;
         let xrInitialized = false;
+        let leftControllerMesh: AbstractMesh = null;
+        let rightControllerMesh: AbstractMesh = null;
         let sceneToRender = null;
         const createDefaultEngine = function () {
             return new Engine(canvas, true, {preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false});
@@ -170,10 +173,45 @@ class App {
 
             // VR config
             // @ts-ignore
-            xrHelper = await scene.createDefaultXRExperienceAsync();
+            //xrHelper = await scene.createDefaultXRExperienceAsync();
+            xrHelper = await WebXRDefaultExperience.CreateAsync(scene, undefined).then((defaultExperience) => {  //
+                defaultExperience.input.onControllerAddedObservable.add((controller: WebXRInputSource) => {
+
+
+                    // Get position
+                    // See: https://forum.babylonjs.com/t/xr-experience-helper-and-camera-controller-positions/9628/12
+                    if (controller.inputSource.handedness === "left") {
+                        //console.log("Grip: ", controller.grip.position);
+                        leftControllerMesh = controller.grip;
+                    } else if (controller.inputSource.handedness === "right") {
+                        rightControllerMesh = controller.grip;
+                    }
+
+
+                    /*
+                    // hands are controllers to; do not want to go do this code; when it is a hand
+                    const isHand = controller.inputSource.hand;
+                    if (isHand) return;*/
+
+                    /*
+                    controller.onMotionControllerInitObservable.add((motionController: WebXRAbstractMotionController) => {
+
+                        console.log(motionController.rootMesh.position);
+                        const isLeft = motionController.handedness === 'left';
+                        if (isLeft) {
+                            controller.onMeshLoadedObservable.add((mesh: AbstractMesh) => {
+                                leftControllerMesh = mesh;
+                            });
+                        }
+
+                    });*/
+                });
+            });
 
             // TODO bind GUI to left controller
-            console.log(xrHelper.input.controllers);
+            // TODO checkout this later on
+            // https://forum.babylonjs.com/t/how-to-get-the-position-and-rotation-of-xr-controllers/19576/3
+            // console.log(xrHelper.input.controllers);
 
 
             const retVal: [Scene, SimulationHelper] = [scene, simulationHelper];
@@ -199,6 +237,13 @@ class App {
             sceneToRender = scene
             engine.runRenderLoop(function () {
                 if (sceneToRender && sceneToRender.activeCamera) {
+                    if (leftControllerMesh !== null) {
+                        console.log("Left controller position: ", leftControllerMesh.position);
+                    }
+                    if (rightControllerMesh !== null) {
+                        console.log("Right controller position: ", rightControllerMesh.position);
+                    }
+                    /*
                     if (!xrInitialized) {
                         if (xrHelper.input.controllers.length > 0) {
                             console.log(xrHelper.input.controllers);
@@ -206,10 +251,13 @@ class App {
                                 console.log(c);
                                 console.log(c.inputSource);
                                 console.log(c.inputSource.handedness);
+                                console.log(c.motionController.handedness);
+                                console.log(c.inputSource)
+                                console.log(c.uniqueId);
                             });
                             xrInitialized = true;
                         }
-                    }
+                    }*/
                     sceneToRender.render();
                     simulationHelper.notify();
                 }
